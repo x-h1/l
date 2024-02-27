@@ -4,7 +4,22 @@ sysctl -w net.ipv6.conf.all.disable_ipv6=1
 sysctl -w net.ipv6.conf.default.disable_ipv6=1
 wget -q https://raw.githubusercontent.com/x-h1/l/master/github -O /root/.gh
 
+# Color
+YELLOW="\033[33m"
+BLUE="\033[36m"
+NC='\e[0m'
+KANAN="\033[1;32m<\033[1;33m<\033[1;31m<\033[1;31m$NC"
+KIRI="\033[1;32m>\033[1;33m>\033[1;31m>\033[1;31m$NC"
+
+print_pasang() {
+if [[ 0 -eq $? ]]; then
+echo -e "${BLUE}[XD TUNNEL]${NC}${KIRI}${YELLOW} $1 ${NC}"
+sleep 2
+fi
+}
+
 function checking_vps() {
+print_pasang "Mengecek Vps apakah support dengan script"
 if [ "${EUID}" -ne 0 ]; then
 echo "You need to run this script as root"
 exit 1
@@ -50,11 +65,13 @@ echo "$localip $(hostname)" >> /etc/hosts
 fi
 
 function buat_folder() {
+print_pasang "Membuat folder folder yang dibutuhkan"
 mkdir -p /etc/info
 mkdir -p /etc/info/ssh
 mkdir -p /etc/info/vmess
 mkdir -p /etc/info/vless
 mkdir -p /etc/info/trojan
+mkdir -p /etc/info/noobzvpns
 mkdir -p /etc/xray
 mkdir -p /etc/xray/limit
 mkdir -p /etc/xray/limit/trojan
@@ -73,10 +90,20 @@ mkdir -p /home/vps/public_html/xd
 mkdir -p /var/lib/xdxl >/dev/null 2>&1
 echo "IP=" >> /var/lib/xdxl/ipvps.conf
 touch /etc/xray/domain
-touch /etc/info
+touch /etc/info/ssh/akun.conf
+touch /etc/info/vmess/akun.conf
+touch /etc/info/vless/akun.conf
+touch /etc/info/trojan/akun.conf
+touch /etc/info/noobzvpns/akun.conf
+echo "& Plaguin Account" >> /etc/info/ssh/akun.conf
+echo "& Plaguin Account" >> /etc/info/vmess/akun.conf
+echo "& Plaguin Account" >> /etc/info/vless/akun.conf
+echo "& Plaguin Account" >> /etc/info/trojan/akun.conf
+echo "& Plaguin Account" >> /etc/info/noobzvpns/akun.conf
 }
 
 function xd_ganteng() {
+print_pasang "Memasang Bahan yang di butuhkan"
 apt update -y
 apt upgrade -y
 apt dist-upgrade -y
@@ -112,6 +139,7 @@ apt autoremove -y >/dev/null 2>&1
 }
 
 function ins_vnstat() {
+print_pasang "Installasi vnstat service"
 sudo apt-get -y install vnstat
 /etc/init.d/vnstat restart
 apt -y install libsqlite3-dev
@@ -130,6 +158,7 @@ rm -rf /root/vnstat-2.6
 }
 
 function Swap_Gotop() {
+print_pasang "Installasi Swap sebesar 1gb"
 curl https://raw.githubusercontent.com/xxxserxxx/gotop/master/scripts/download.sh | bash && chmod +x gotop && sudo mv gotop /usr/local/bin/
 dd if=/dev/zero of=/swapfile bs=1024 count=1048576
 mkswap /swapfile
@@ -142,7 +171,7 @@ chronyd -q 'server 0.id.pool.ntp.org iburst'
 chronyc sourcestats -v
 chronyc tracking -v
 wget ${GITHUB_REPO}/bbr.sh
-chmod +x bbr.sh ; ./bbr.sh
+chmod 777 bbr.sh ; ./bbr.sh
 rm -rf bbr.sh
 }
 
@@ -163,6 +192,7 @@ fi
 }
 
 function password_ssh() {
+print_pasang "Installasi service ssh"
 # initializing var
 export DEBIAN_FRONTEND=noninteractive
 MYIP=$(wget -qO- ipinfo.io/ip);
@@ -228,6 +258,7 @@ echo "/usr/sbin/nologin" >> /etc/shells
 }
 
 function konfigurasi_paket() {
+print_pasang "Memasang paket konfigurasi"
 cd
 rm /etc/nginx/sites-enabled/default
 rm /etc/nginx/sites-available/default
@@ -267,6 +298,7 @@ chmod 777 /usr/bin/badvpn
 }
 
 function install_dropbear() {
+print_pasang "Installasi dropbear"
 
 cat > /etc/default/dropbear <<-END
 # disabled because OpenSSH is installed
@@ -312,6 +344,7 @@ sed -i 's@DROPBEAR_BANNER=""@DROPBEAR_BANNER="/etc/issue.net"@g' /etc/default/dr
 echo "0 0 * * * root xp" >> /etc/crontab
 echo "0 3 * * * root clearlog && reboot" >> /etc/crontab
 
+rm -f /etc/stunnel/stunnel.conf
 cat > /etc/stunnel/stunnel.conf <<-END
 cert = /etc/stunnel/stunnel.pem
 client = no
@@ -320,7 +353,7 @@ socket = l:TCP_NODELAY=1
 socket = r:TCP_NODELAY=1
 
 [dropbear]
-accept = 2222
+accept = 222
 connect = 127.0.0.1:22
 
 [dropbear]
@@ -352,10 +385,10 @@ apt install -y fail2ban
 
 # Instal DDOS Flate
 if [ -d '/usr/local/ddos' ]; then
-	echo; echo; echo "Please un-install the previous version first"
-	#exit 0
+echo; echo; echo "Please un-install the previous version first"
+#exit 0
 else
-	mkdir /usr/local/ddos
+mkdir /usr/local/ddos
 fi
 clear
 echo; echo 'Installing DOS-Deflate 0.6'; echo
@@ -415,6 +448,7 @@ echo "unset HISTFILE" >> /etc/profile
 }
 
 function download_xray() {
+print_pasang "Installasi Service Xray"
 date
 timedatectl set-ntp true
 echo -e "[ ${green}INFO$NC ] Enable chronyd"
@@ -445,9 +479,24 @@ touch /var/log/xray/access.log
 touch /var/log/xray/error.log
 touch /var/log/xray/access2.log
 touch /var/log/xray/error2.log
-# / / Ambil Xray Core Version Terbaru
+
 latest_version="$(curl -s https://api.github.com/repos/XTLS/Xray-core/releases | grep tag_name | sed -E 's/.*"v(.*)".*/\1/' | head -n 1)"
-bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u www-data --version $latest_version
+# / / Installation Xray Core
+xraycore_link="https://github.com/XTLS/Xray-core/releases/download/v$latest_version/xray-linux-64.zip"
+# / / Ambil Xray Core Version Terbaru
+bash -c "$(curl -L https://github.com/XTLS/Xray-install/raw/main/install-release.sh)" @ install -u www-data --version $latest_version >/dev/null 2>&1
+
+# / / Make Main Directory
+mkdir -p /usr/bin/xray
+mkdir -p /etc/xray
+mkdir -p /usr/local/etc/xray
+# / / Unzip Xray Linux 64
+cd `mktemp -d`
+curl -sL "$xraycore_link" -o xray.zip
+unzip -q xray.zip && rm -rf xray.zip
+mv xray /usr/local/bin/xray
+chmod 777 /usr/local/bin/xray
+sleep 0.5
 
 domain=$(cat /root/domain)
 
@@ -520,7 +569,7 @@ cd `mktemp -d`
 curl -sL "${trojango_link}" -o trojan-go.zip
 unzip -q trojan-go.zip && rm -rf trojan-go.zip
 mv trojan-go /usr/local/bin/trojan-go
-chmod +x /usr/local/bin/trojan-go
+chmod 777 /usr/local/bin/trojan-go
 mkdir /var/log/trojan-go/
 touch /etc/trojan-go/akun.conf
 touch /var/log/trojan-go/trojan-go.log
@@ -594,6 +643,7 @@ chmod 644 /root/.profile
 }
 
 function ins_backup() {
+print_pasang "Installasi backup server"
 apt install rclone -y > /dev/null 2>&1
 printf "q\n" | rclone config
 wget -O /root/.config/rclone/rclone.conf "${GITHUB_REPO}/rclone.conf"
@@ -624,9 +674,10 @@ cd
 }
 
 function restartser() {
+print_pasang "Restart all service"
 systemctl daemon-reload
 sleep 1
-echo -e "$yell[SERVICE]$NC Restart All service SSH & OVPN"
+echo -e "$yell[SERVICE]$NC Restart & Enable All service SSH & OVPN"
 /etc/init.d/nginx restart >/dev/null 2>&1
 /etc/init.d/openvpn restart >/dev/null 2>&1
 /etc/init.d/ssh restart >/dev/null 2>&1
@@ -708,6 +759,7 @@ secs_to_human() {
 start=$(date +%s)
 ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 secs_to_human "$(($(date +%s) - ${start}))"
+clear
 echo -e ""
 echo -e "Installasi Berjalan Dengan Sukses"
 echo -e "Silahkan ganti port login vps dari 22 menjadi 2222"
