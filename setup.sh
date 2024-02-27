@@ -834,6 +834,7 @@ secs_to_human() {
 start=$(date +%s)
 ln -fs /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 secs_to_human "$(($(date +%s) - ${start}))"
+
 clear
 echo -e ""
 echo -e "Installasi Berjalan Dengan Sukses"
