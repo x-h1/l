@@ -806,6 +806,7 @@ Swap_Gotop
 password_ssh
 sldns
 udp_hc
+ins_noobz
 install_dropbear
 download_xray
 konfigurasi_paket
